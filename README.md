@@ -1,5 +1,7 @@
 # GNU Radio RTL-SDR LoRa 接收工程
 
+完整离线依赖包见 [v1.0.0 Releases](https://github.com/cyx728/LifeBeacon_Receiver/releases/tag/v1.0.0)，提供 Windows x64、macOS Intel 和 Apple Silicon；同名 `.sha256` 文件用于校验下载完整性。
+
 ## 运行方式（LifeBeacon Receiver）
 
 ### Windows：本机已安装环境
@@ -8,19 +10,19 @@
 
 ```powershell
 Set-Location 'C:\Users\chen\OneDrive - Beijing 101 Middle High School\Projects\26-27 #1 Conrad Challenge\Program\LifeBeacon_Receiver'
-& 'D:\ProgramData\radioconda\python.exe' .\receiver.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-LoRaReceiver.ps1
 ```
 
 只做 GUI 启动检查：
 
 ```powershell
-& 'D:\ProgramData\radioconda\python.exe' .\receiver.py --gui-smoke-test
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-LoRaReceiver.ps1 --gui-smoke-test
 ```
 
 只做数字 LoRa/LB 回环测试：
 
 ```powershell
-& 'D:\ProgramData\radioconda\python.exe' .\receiver.py --self-test
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Start-LoRaReceiver.ps1 --self-test
 ```
 
 也可以双击 `Start-LoRaReceiver.ps1`，或从文件资源管理器右键选择“使用 PowerShell 运行”。启动后在设备下拉框选择 RTL-SDR，再点击“开始接收”。运行前关闭 SDR#、`rtl_tcp`、GNU Radio 等可能占用同一设备的程序。
@@ -31,18 +33,38 @@ Set-Location 'C:\Users\chen\OneDrive - Beijing 101 Middle High School\Projects\2
 
 ```powershell
 Set-Location 'C:\Users\chen\OneDrive - Beijing 101 Middle High School\Projects\26-27 #1 Conrad Challenge\Program\LifeBeacon_Receiver'
-& 'D:\ProgramData\radioconda\Scripts\gnuradio-companion.exe' .\RTL_SDR_LoRa_RX.grc
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Open-GRC.ps1
 ```
 
 GRC 用于查看和修改接收链；专用 GUI 负责 LB 应用协议解析、日志和距离可视化。只运行一个接收程序，避免 USB 设备冲突。
 
 ### 测试脚本
 
-在本目录执行 `verify_protocol.py`、`verify_gui.py`、`verify_packet_merger.py`、`verify_log_analysis.py` 和 `verify_receiver_config.py` 可运行对应回归检查。所有测试使用合成 IQ 或历史数据，不等于现场无线接收成功。
+在本目录执行 `verify_protocol.py`、`verify_gui.py`、`verify_packet_merger.py`、`verify_log_analysis.py` 和 `verify_receiver_config.py` 可运行对应回归检查，例如：
+
+```powershell
+$receiverRuntime = 'D:\ProgramData\radioconda'
+$env:PATH = "$receiverRuntime;$receiverRuntime\Library\bin;$receiverRuntime\Scripts;$env:PATH"
+& "$receiverRuntime\python.exe" .\verify_protocol.py
+```
+
+所有测试使用合成 IQ 或历史数据，不等于现场无线接收成功。以上 `D:` 路径是本机开发环境；其他电脑优先使用离线发布包，自建环境需修改两个 `.ps1` 启动脚本中的 `$radioRoot`。
 
 ### Windows 离线发布包
 
-若使用 `LifeBeacon-v1.0.0-windows-x64.zip`，解压到较短路径后运行包内 `Start-Windows.cmd`。首次运行从包内 `packages` 创建离线 `runtime`，无需预装 Python/GNU Radio；启动器不映射盘符，若 Qt DLL 因路径过长无法加载，会将完整错误写入 `startup-error.log`。
+若使用 `LifeBeacon-v1.0.0-windows-x64.zip`，解压到较短路径后进入 `LifeBeacon-v1.0.0-win-64`，双击 `Start-Windows.cmd`。首次运行从包内 `packages` 创建离线 `runtime`，无需预装 Python/GNU Radio。若启动失败，请查看命令窗口中的原始错误；此冻结版启动器不生成 `startup-error.log`。
+
+### macOS 离线发布包
+
+Intel Mac 下载 `LifeBeacon-v1.0.0-osx-64.tar.gz`，Apple Silicon 下载 `LifeBeacon-v1.0.0-osx-arm64.tar.gz`。解压后打开终端，例如 Apple Silicon：
+
+```bash
+cd /path/to/LifeBeacon-v1.0.0-osx-arm64
+chmod +x Start-macOS.command micromamba
+./Start-macOS.command
+```
+
+Intel 版将目录名改为 `LifeBeacon-v1.0.0-osx-64`。首次启动使用包内 `packages` 离线创建 `runtime`，之后直接运行 `app/receiver.py`。需要允许未签名程序运行并确保 RTL-SDR USB 可访问。本轮仅核对包内启动脚本，尚未在 macOS 实机验证。
 
 可视化现在直接嵌入主窗口右侧实时日志表格下方，拖动两者之间的水平分隔条可调整高度。设备标记随正式接收记录实时更新，保留超时和线性/对数传播控制，并跟随主界面语言。“可视化 → 距离可视化”会展开并聚焦该区域，不再创建独立窗口。
 
